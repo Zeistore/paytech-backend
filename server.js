@@ -7,14 +7,6 @@ const app = express();
 app.use(express.json());
 
 // ==========================
-// 🔥 LOGGER GLOBAL (IMPORTANT)
-// ==========================
-app.use((req, res, next) => {
-    console.log("🔥 REQUÊTE :", req.method, req.url);
-    next();
-});
-
-// ==========================
 // 🔍 VERIFICATION CONFIG
 // ==========================
 if (!process.env.PAYTECH_API_KEY || !process.env.PAYTECH_API_SECRET) {
@@ -37,7 +29,7 @@ if (!process.env.MYBACKENDURL) {
 // ==========================
 app.post('/create-payment-link', async (req, res) => {
     try {
-        console.log("📦 DONNÉES ZAPIER :", req.body);
+        console.log("📩 DONNÉES REÇUES :", req.body);
 
         let {
             item_name,
@@ -54,8 +46,8 @@ app.post('/create-payment-link', async (req, res) => {
         console.log("💰 PRIX BRUT :", rawPrice);
 
         rawPrice = rawPrice.toString()
-            .replace(/\s/g, '')
-            .replace(',', '.');
+            .replace(/\s/g, '')   // enlève espaces
+            .replace(',', '.');   // remplace virgule
 
         let amount = Math.round(Number(rawPrice));
 
@@ -72,20 +64,18 @@ app.post('/create-payment-link', async (req, res) => {
         // 📦 PAYLOAD PAYTECH
         // ==========================
         const payload = {
-            item_name: item_name || "Produit ZeiStore",
-            item_price: amount.toString(),
-            currency: "XOF",
-            ref_command: ref_command || ("CMD_" + Date.now()),
-            command_name: command_name || "Paiement ZeiStore",
+    item_name: item_name || "Produit ZeiStore",
+    item_price: amount.toString(),
+    currency: "XOF",
+    ref_command: ref_command || ("CMD_" + Date.now()),
+    command_name: command_name || "Paiement ZeiStore",
 
-            env: "prod",
+    env: "prod", // 🔥 ICI LA CORRECTION
 
-            // 🔥 IPN CORRECT
-            ipn_url: process.env.MYBACKENDURL + "/ipn",
-
-            success_url: "https://zeistoreofficiel.com/pages/merci",
-            cancel_url: "https://zeistoreofficiel.com/cart"
-        };
+    ipn_url: process.env.MYBACKENDURL + "/ipn",
+    success_url: "https://zeistoreofficiel.com/pages/merci",
+    cancel_url: "https://zeistoreofficiel.com/cart"
+};
 
         console.log("📦 PAYLOAD PAYTECH :", payload);
 
@@ -103,6 +93,9 @@ app.post('/create-payment-link', async (req, res) => {
 
         console.log("✅ RÉPONSE PAYTECH :", response.data);
 
+        // ==========================
+        // 🔁 RETOUR ZAPIER
+        // ==========================
         res.json({
             success: true,
             redirect_url: response.data.redirect_url
@@ -128,7 +121,7 @@ app.post('/create-payment-link', async (req, res) => {
 // 🔐 IPN PAYTECH
 // ==========================
 app.post('/ipn', (req, res) => {
-    console.log("💰 IPN PAYTECH REÇU :", req.body);
+    console.log("📩 IPN REÇU :", req.body);
     res.status(200).send('OK');
 });
 
@@ -136,15 +129,11 @@ app.post('/ipn', (req, res) => {
 // ROUTE TEST
 // ==========================
 app.get('/', (req, res) => {
-    console.log("🌍 TEST BACKEND");
     res.send('🚀 Backend PayTech actif');
 });
 
 // ==========================
-// PORT RENDER (IMPORTANT)
-// ==========================
-const PORT = process.env.PORT || 3000;
-
+const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Serveur lancé sur PORT ${PORT}`);
+    console.log(`🚀 Serveur lancé sur http://localhost:${PORT}`);
 });
