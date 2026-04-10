@@ -5,6 +5,7 @@ const axios = require('axios');
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // 🔥 FIX IPN
 
 // ==========================
 // 🔍 VERIFICATION CONFIG
@@ -38,16 +39,13 @@ app.post('/create-payment-link', async (req, res) => {
             command_name
         } = req.body;
 
-        // ==========================
-        // 💰 NETTOYAGE DU PRIX
-        // ==========================
         let rawPrice = item_price;
 
         console.log("💰 PRIX BRUT :", rawPrice);
 
         rawPrice = rawPrice.toString()
-            .replace(/\s/g, '')   // enlève espaces
-            .replace(',', '.');   // remplace virgule
+            .replace(/\s/g, '')
+            .replace(',', '.');
 
         let amount = Math.round(Number(rawPrice));
 
@@ -60,22 +58,17 @@ app.post('/create-payment-link', async (req, res) => {
             });
         }
 
-        // ==========================
-        // 📦 PAYLOAD PAYTECH
-        // ==========================
         const payload = {
-    item_name: item_name || "Produit ZeiStore",
-    item_price: amount.toString(),
-    currency: "XOF",
-    ref_command: ref_command || ("CMD_" + Date.now()),
-    command_name: command_name || "Paiement ZeiStore",
-
-    env: "prod", // 🔥 ICI LA CORRECTION
-
-    ipn_url: process.env.MYBACKENDURL + "/ipn",
-    success_url: "https://zeistoreofficiel.com/pages/merci",
-    cancel_url: "https://zeistoreofficiel.com/cart"
-};
+            item_name: item_name || "Produit ZeiStore",
+            item_price: amount.toString(),
+            currency: "XOF",
+            ref_command: ref_command || ("CMD_" + Date.now()),
+            command_name: command_name || "Paiement ZeiStore",
+            env: "prod",
+            ipn_url: process.env.MYBACKENDURL + "/ipn",
+            success_url: "https://zeistoreofficiel.com/pages/merci",
+            cancel_url: "https://zeistoreofficiel.com/cart"
+        };
 
         console.log("📦 PAYLOAD PAYTECH :", payload);
 
@@ -93,9 +86,6 @@ app.post('/create-payment-link', async (req, res) => {
 
         console.log("✅ RÉPONSE PAYTECH :", response.data);
 
-        // ==========================
-        // 🔁 RETOUR ZAPIER
-        // ==========================
         res.json({
             success: true,
             redirect_url: response.data.redirect_url
