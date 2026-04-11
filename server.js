@@ -114,7 +114,7 @@ app.post('/ipn', async (req, res) => {
     console.log("📩 IPN REÇU :", req.body);
 
     try {
-        await axios.post("COLLE_URL_ZAPIER_ICI", {
+        await axios.post("https://hooks.zapier.com/hooks/catch/27141384/u7gi84e/", {
             ref_command: req.body.ref_command,
             amount: req.body.item_price,
             status: req.body.type_event,
